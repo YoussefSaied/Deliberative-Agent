@@ -11,6 +11,11 @@ import logist.task.TaskSet;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Arrays;
+
 /**
  * An optimal planner for one vehicle.
  */
@@ -38,7 +43,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		
 		// initialize the planner
 		int capacity = agent.vehicles().get(0).capacity();
-		String algorithmName = agent.readProperty("algorithm", String.class, "ASTAR");
+		String algorithmName = agent.readProperty("algorithm", String.class, "BFS");
 		
 		// Throws IllegalArgumentException if algorithm is unknown
 		algorithm = Algorithm.valueOf(algorithmName.toUpperCase());
@@ -49,7 +54,7 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 	@Override
 	public Plan plan(Vehicle vehicle, TaskSet tasks) {
 		Plan plan;
-
+		long startTime = System.currentTimeMillis();
 		// Compute the plan with the selected algorithm.
 		switch (algorithm) {
 		case ASTAR:
@@ -58,14 +63,48 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 			break;
 		case BFS:
 			// ...
-			plan = naivePlan(vehicle, tasks);
+			plan = new BFS(vehicle, tasks).build(false);
 			break;
-		default:
-			throw new AssertionError("Should not happen.");
-		}		
+			default:
+				throw new AssertionError("Should not happen.");
+		}
+		long endTime = System.currentTimeMillis();
+
+		System.out.println("Algorithm: " + algorithm);
+
+		double distance = vehicle.getDistance() + plan.totalDistance();
+		System.out.println("Distance to be travelled: " + distance);
+
+		double timeTaken= (endTime - startTime) / 1000.0;
+		long cost= (long) (vehicle.costPerKm()*plan.totalDistance());
+		System.out.println("Plan computed in " + (endTime - startTime) / 1000.0 + "s");
+		String fileName =  System.getProperty("user.dir")+ "/txtFiles/"
+				+ (Integer) tasks.size() + agent.readProperty("algorithm", String.class, "BFS");
+		writeDataToCSV(fileName, cost, timeTaken);
+
 		return plan;
 	}
-	
+
+	public void writeDataToCSV(String csvFile, long dataItem2, double dataItem3) {
+		FileWriter writer;
+
+		try {
+			writer = new FileWriter(csvFile, false);
+
+			CSVWriter.writeLine(writer, Arrays.asList(
+					Long.toString(dataItem2),
+					Double.toString(dataItem3)
+					)
+			);
+
+			writer.flush();
+			writer.close();
+
+		} catch (IOException e2) {
+			e2.printStackTrace();
+		}
+	}
+
 	private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
 		City current = vehicle.getCurrentCity();
 		Plan plan = new Plan(current);

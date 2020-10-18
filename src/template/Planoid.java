@@ -3,28 +3,21 @@ package template;
 
 import java.util.List;
 
-import template.State.Action;
-
 class Planoid implements Comparable<Planoid> {
-    public final List<Action> actions; // Partial plan
+    public final List<BetterAction> actions; // Partial plan
     public final State lastState; // Resulting state from applying the plan
     public final double heuristicCost; // Estimated cost of applying the plan until goal is satisfied
     public final double knownCost; // Cost of applying the plan from the start to now
 
-    public Planoid(List<Action> actions, State lastState, double heuristicCost, double knownCost) {
+    public Planoid(List<BetterAction> actions, State lastState, double heuristicCost, double knownCost) {
         this.actions = actions;
         this.lastState = lastState;
         this.heuristicCost = heuristicCost;
         this.knownCost = knownCost;
     }
 
-    /**
-     * Constructor that invalidate the comparable. Use with BFS.
-     *
-     * @param actions
-     * @param lastState
-     */
-    public Planoid(List<Action> actions, State lastState) {
+
+    public Planoid(List<BetterAction> actions, State lastState) {
         super();
         this.actions = actions;
         this.lastState = lastState;
@@ -33,20 +26,23 @@ class Planoid implements Comparable<Planoid> {
     }
 
     /**
+     * Returns the cost of this planoid.
+     */
+
+    public double getCost() {
+        return heuristicCost + knownCost;
+    }
+
+    /**
      * Returns a negative integer, zero, or a positive integer as this object is less than, equal to, or greater than
      * the specified object.
      */
     @Override
     public int compareTo(Planoid o) {
-        if (getCost() < o.getCost())
-            return -1;
-        else if (getCost() > o.getCost())
-            return 1;
-        else
-            return 0;
+        if (getCost() < o.getCost()) return -1;
+        else if (getCost() > o.getCost()) return 1;
+        else return 0;
     }
 
-    public double getCost() {
-        return heuristicCost + knownCost;
-    }
+
 }
