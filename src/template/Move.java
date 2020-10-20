@@ -2,7 +2,9 @@ package template;
 
 import logist.topology.Topology;
 
+
 public final class Move extends BetterAction {
+
     public final Topology.City destination;
 
     public Move(Topology.City destination) {

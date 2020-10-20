@@ -3,7 +3,9 @@ package template;
 import logist.task.Task;
 import logist.task.TaskSet;
 
+
 public final class Pickup extends BetterAction {
+
     public final Task task;
 
     public Pickup(Task task) {
@@ -19,7 +21,7 @@ public final class Pickup extends BetterAction {
     public State transformState(State initialState) {
         assert initialState.emptySpace >= task.weight;
 
-        // Transfer the task from one set to the other
+        // Move the task from the set of available tasks on the topology to the set of carried tasks.
         TaskSet newTasks = initialState.tasks.clone();
         newTasks.remove(task);
 
@@ -34,7 +36,7 @@ public final class Pickup extends BetterAction {
 
     @Override
     public double cost(State initialState) {
-        // No cost or reward for picking up
+        // There is no cost or reward for picking up.
         return 0;
     }
 
@@ -42,4 +44,5 @@ public final class Pickup extends BetterAction {
     public String toString() {
         return "Picked up  "+ task.id+ " from " + task.pickupCity.id +  " to deliver to " + task.deliveryCity.id ;
     }
+
 }

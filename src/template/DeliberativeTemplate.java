@@ -11,10 +11,10 @@ import logist.task.TaskSet;
 import logist.topology.Topology;
 import logist.topology.Topology.City;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Arrays;
+
 
 /**
  * An optimal planner for one vehicle.
@@ -22,78 +22,85 @@ import java.util.Arrays;
 @SuppressWarnings("unused")
 public class DeliberativeTemplate implements DeliberativeBehavior {
 
-	enum Algorithm { BFS, ASTAR }
-	
-	/* Environment */
 	Topology topology;
 	TaskDistribution td;
-	
-	/* the properties of the agent */
+	String agent_name;
+
 	Agent agent;
 	int capacity;
 
-	/* the planning class */
-	Algorithm algorithm;
-	
+	String algorithm;
+
 	@Override
 	public void setup(Topology topology, TaskDistribution td, Agent agent) {
 		this.topology = topology;
 		this.td = td;
 		this.agent = agent;
-		
-		// initialize the planner
+
+		// Get the vehicle's capacity.
 		int capacity = agent.vehicles().get(0).capacity();
-		String algorithmName = agent.readProperty("algorithm", String.class, "BFS");
-		
-		// Throws IllegalArgumentException if algorithm is unknown
-		algorithm = Algorithm.valueOf(algorithmName.toUpperCase());
-		
+
+		// Get the algorithm.
+		algorithm = agent.readProperty("algorithm", String.class, "BFS").toUpperCase();
+
 		// ...
 	}
 	
 	@Override
 	public Plan plan(Vehicle vehicle, TaskSet tasks) {
+
 		Plan plan;
+
+		// Get the timestamp when the plan computation begins.
 		long startTime = System.currentTimeMillis();
+
 		// Compute the plan with the selected algorithm.
 		switch (algorithm) {
-		case ASTAR:
-			// ...
-			plan = naivePlan(vehicle, tasks);
+		case "ASTAR":
+			// Compute a plan using A* algorithm.
+			plan = new AStarAlgorithm(vehicle, tasks).build();
 			break;
-		case BFS:
+		case "BFS":
 			// ...
 			plan = new BFS(vehicle, tasks).build(false);
 			break;
 			default:
-				throw new AssertionError("Should not happen.");
+				throw new AssertionError("Please provide a valid algorithm.");
 		}
+
+		// Get the timestamp when the computed plan is returned.
 		long endTime = System.currentTimeMillis();
 
 		System.out.println("Algorithm: " + algorithm);
 
-		double distance = vehicle.getDistance() + plan.totalDistance();
-		System.out.println("Distance to be travelled: " + distance);
 
+		// The time it took to compute the plan.
 		double timeTaken= (endTime - startTime) / 1000.0;
-		long cost= (long) (vehicle.costPerKm()*plan.totalDistance());
+
+		// The cols of the plan for the current vehicle.
+		long cost = (long) (vehicle.costPerKm()*plan.totalDistance());
+
 		System.out.println("Plan computed in " + (endTime - startTime) / 1000.0 + "s");
-		String fileName =  System.getProperty("user.dir")+ "/txtFiles/"
-				+ (Integer) tasks.size() + agent.readProperty("algorithm", String.class, "BFS");
-		writeDataToCSV(fileName, cost, timeTaken);
+
+//		String fileName =  System.getProperty("user.dir")+ "/txtFiles/"
+//				+ (Integer) tasks.size() + agent.readProperty("algorithm", String.class, "BFS");
+//		writeDataToCSV(fileName, cost, timeTaken);
 
 		return plan;
 	}
 
-	public void writeDataToCSV(String csvFile, long dataItem2, double dataItem3) {
+
+	public void writeDataToCSV(String csvFile, long dataItem1, double dataItem2) {
+		// Writes data to a .csv file.
+
 		FileWriter writer;
 
 		try {
 			writer = new FileWriter(csvFile, false);
 
 			CSVWriter.writeLine(writer, Arrays.asList(
-					Long.toString(dataItem2),
-					Double.toString(dataItem3)
+					Long.toString(dataItem1),
+					Double.toString(dataItem2)
 					)
 			);
 
@@ -105,7 +112,9 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 		}
 	}
 
+
 	private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
+
 		City current = vehicle.getCurrentCity();
 		Plan plan = new Plan(current);
 
@@ -125,8 +134,10 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 			// set current city
 			current = task.deliveryCity;
 		}
+
 		return plan;
 	}
+
 
 	@Override
 	public void planCancelled(TaskSet carriedTasks) {

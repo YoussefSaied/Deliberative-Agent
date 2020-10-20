@@ -11,6 +11,11 @@ import java.util.LinkedList;
 import java.util.Map;
 
 
+/**
+ * Implements the BFS algorithm.
+ *
+ *
+ */
 public class BFS {
 
     private City initialCity;
@@ -26,21 +31,23 @@ public class BFS {
 
     /**
      *
-     * @return Optimal Plan using the BFS algorithm
+     * @return Optimal Plan using the BFS algorithm.
      */
-
     public Plan build(boolean optimziations) {
+
         // A list of vertices to visits and the actions leading up to them:
-        LinkedList<Planoid> queue = new LinkedList<>(); // To Iuliana: Why use this type?
-        ArrayList<State> alreadyVisitedStates = new ArrayList<>(); // To Iuliana: Why use this type?
-        queue.addLast(new Planoid(new ArrayList<>(), intialState));
-        Double optimalCost =Double.POSITIVE_INFINITY;
-        Planoid optimalPlanoid =null;
+        LinkedList<SubPlan> queue = new LinkedList<>();
+
+
+        ArrayList<State> alreadyVisitedStates = new ArrayList<>();
+        queue.addLast(new SubPlan(new ArrayList<>(), intialState));
+        Double optimalCost = Double.POSITIVE_INFINITY;
+        SubPlan optimalSubPlan = null;
         // Debugging:
         int i=0;
 
         while (!queue.isEmpty()) {
-            Planoid vertex = queue.poll();
+            SubPlan vertex = queue.poll();
             State state = vertex.lastState;
             if (state.isGoal()) {
                 //Debugging:empty
@@ -54,7 +61,7 @@ public class BFS {
                 }
                 else {
                     if (vertex.getCost() < optimalCost) {
-                        optimalPlanoid = vertex;
+                        optimalSubPlan = vertex;
                         optimalCost = vertex.getCost();
                     }
                 }
@@ -64,29 +71,32 @@ public class BFS {
                     State successorState = state.transformState(action);
                     ArrayList<BetterAction> newPlanoidActions = new ArrayList<BetterAction>(vertex.actions);
                     newPlanoidActions.add(action);
-                    Planoid potentialPlanoid =new Planoid(newPlanoidActions, successorState,
-                            0.0,vertex.getCost()+ action.cost(state) );
+//                    SubPlan potentialSubPlan =new SubPlan(newSubPlanActions, successorState,
+//                            0.0, vertex.getCost() + action.cost(state) );
+                    SubPlan potentialSubPlan = new SubPlan(newPlanoidActions, successorState);
                     Double previousCost = stateCostMap.getOrDefault(successorState, Double.POSITIVE_INFINITY);
-                    Double currentCost = potentialPlanoid.getCost();
+                    Double currentCost = potentialSubPlan.getCost();
+                    queue.addLast(potentialSubPlan);
 
-
-                    if (currentCost < previousCost && currentCost < optimalCost ) {
-                        stateCostMap.put(vertex.lastState, currentCost);
-                        queue.add(potentialPlanoid);
-
-                        //Debugging:
-//                        System.out.println("# of actions " + potentialPlanoid.actions.size());
-//                        System.out.println("# of tasks " + potentialPlanoid.lastState.tasks.size());
-//                        i++;
-                    }
+                    // Attempt to implement cost-wise optimisation on BFS. However, it is not required for basic BFS.
+//                    if (currentCost < previousCost && currentCost < optimalCost ) {
+//                        stateCostMap.put(vertex.lastState, currentCost);
+//                        queue.addLast(potentialSubPlan);
+//
+//                        //Debugging:
+////                        System.out.println("# of actions " + potentialSubPlan.actions.size());
+////                        System.out.println("# of tasks " + potentialSubPlan.lastState.tasks.size());
+////                        i++;
+//                    }
 
                 }
             }
         }
-        if (optimalPlanoid != null) {
-            if (optimalPlanoid.lastState.isGoal()){
-                return new Plan(initialCity, HelperClass.convertToLogistActions(optimalPlanoid.actions));}
+        if (optimalSubPlan != null) {
+            if (optimalSubPlan.lastState.isGoal()){
+                return new Plan(initialCity, HelperClass.convertToLogistActions(optimalSubPlan.actions));}
         }
         throw new AssertionError("Goal state never reached!");
     }
-}
+
+} /*** end of BFS Algorithm **/

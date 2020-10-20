@@ -1,9 +1,7 @@
 package template;
 
-// Example for helper class
 
 import logist.plan.Action;
-
 import java.util.ArrayList;
 import java.util.List;
 

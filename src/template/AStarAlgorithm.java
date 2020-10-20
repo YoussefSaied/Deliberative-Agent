@@ -7,8 +7,9 @@ import logist.plan.Plan;
 import logist.simulation.Vehicle;
 import logist.task.TaskSet;
 
+
 /**
- * Implements the A* algorithm with the following heuristics:
+ * Implements the A* algorithm with an optimal heuristic.
  *
  *
  */
@@ -18,37 +19,38 @@ public class AStarAlgorithm {
     private final Map<State, Double> stateCostMap = new HashMap<State, Double>();
 
     // A queue of the states to visit sorted by priority (cost).
-    private final PriorityQueue<Planoid> queue = new PriorityQueue<Planoid>();
+    private final PriorityQueue<SubPlan> queue = new PriorityQueue<SubPlan>();
 
     // Initial state.
     private final State initialState;
 
-    private final Heuristic heuristic;
-
-    /* see computeHeuristic for details */
-    public enum Heuristic {
-        DELIVERY, OPTIMISTIC, CONSTANT
-    }
-
-    public AStarAlgorithm(Vehicle vehicle, TaskSet tasks, Heuristic heuristic) {
-        this.heuristic = heuristic;
+    public AStarAlgorithm(Vehicle vehicle, TaskSet tasks) {
         // Initialize the al from the initial state
 
         this.initialState = State.recreateInitialState(vehicle, tasks);
 
-        Planoid initialPlan = new Planoid(new ArrayList<BetterAction>(), this.initialState,
-                computeHeuristic(initialState), 0.0);
+        double heuristicCost = -initialState.tasks.rewardSum() - initialState.carriedTasks.rewardSum();
+
+        SubPlan initialPlan = new SubPlan(new ArrayList<BetterAction>(), this.initialState,
+                heuristicCost, 0.0);
+
 
         queue.add(initialPlan);
     }
 
+    /**
+     *
+     * @return Optimal Plan using the A* algorithm.
+     */
     public Plan build() {
 
         do {
-            Planoid vertex = dequeue();
+            SubPlan vertex = dequeue();
 
             if (vertex.lastState.isGoal()) {
+                System.out.println("# of actions " + vertex.actions.size());
                 System.out.println("# of node visited: " + stateCostMap.size());
+                System.out.println(HelperClass.convertBetterActionsToString(vertex.actions));
                 return new Plan(initialState.currentLocation, HelperClass.convertToLogistActions( vertex.actions));
             }
 
@@ -67,29 +69,7 @@ public class AStarAlgorithm {
     }
 
 
-    private double computeHeuristic(State state) {
-        switch (heuristic) {
-            case CONSTANT:
-                // Simplest heuristic
-                // -> fast, but sub-optimal for small enough problem. Doesn't converge for higher number of tasks.
-                return 0;
-
-            case OPTIMISTIC:
-                // Naive heuristic
-                // -> MUCH slower but much more cost-efficient
-                return -state.tasks.rewardSum() - state.carriedTasks.rewardSum();
-
-            case DELIVERY:
-                // Slightly less naive heuristic: use only what's on the lorry to predict cost
-                // -> Very fast, a bit sub-optimal
-                return -state.carriedTasks.rewardSum();
-
-            default:
-                throw new AssertionError("Should not happen.");
-        }
-    }
-
-    private void enqueue(Planoid parentVertex, BetterAction action) {
+    private void enqueue(SubPlan parentVertex, BetterAction action) {
         // Create a new Planoid using a parent Planoid/ vertex and then enqueue it to the priority queue.
         List<BetterAction> actions = new LinkedList<BetterAction>(parentVertex.actions);
         actions.add(action);
@@ -97,14 +77,14 @@ public class AStarAlgorithm {
         State newLastState = parentVertex.lastState.transformState(action);
 
         double knownCost = parentVertex.knownCost + action.cost(parentVertex.lastState);
-        double heuristic = computeHeuristic(newLastState);
+        double heuristicCost = -newLastState.tasks.rewardSum() - newLastState.carriedTasks.rewardSum();
 
-        Planoid nextNode = new Planoid(actions, newLastState, heuristic, knownCost);
+        SubPlan nextNode = new SubPlan(actions, newLastState, heuristicCost, knownCost);
 
         queue.add(nextNode);
     }
 
-    private Planoid dequeue() {
+    private SubPlan dequeue() {
         return queue.remove();
     }
 

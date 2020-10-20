@@ -3,7 +3,9 @@ package template;
 import logist.task.Task;
 import logist.task.TaskSet;
 
+
 public final class Deliver extends BetterAction {
+
     public final Task task;
 
     public Deliver(Task task) {
@@ -36,4 +38,5 @@ public final class Deliver extends BetterAction {
     public String toString() {
         return "Delivered  "+ task.id+ " from " + task.pickupCity.id +  " to " + task.deliveryCity.id ;
     }
+
 }
